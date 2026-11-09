@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_widgets.dart';
 import 'register_screen.dart';
 
@@ -36,10 +37,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showMsg(String msg, {bool error = false}) {
+    final Color bg = error ? Colors.red.shade600 : Colors.green.shade600;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: error ? Colors.red.shade600 : Colors.green.shade600,
+        backgroundColor: bg,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -59,9 +61,18 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       final data = jsonDecode(res.body);
       if (!mounted) return;
+
       if (res.statusCode == 200) {
-        _showMsg('Đăng nhập thành công!');
-        // TODO: lưu token (data['token']) và chuyển sang màn hình chính, ví dụ:
+        // Lưu JWT token và thông tin người dùng
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', data['token']);
+        await prefs.setString('fullName', data['user']['fullName']);
+        await prefs.setString('email', data['user']['email']);
+
+        if (!mounted) return;
+        _showMsg('Xin chào ${data['user']['fullName']}!');
+
+        // TODO: chuyển sang màn hình chính khi đã có, ví dụ:
         // Navigator.pushReplacement(context,
         //     MaterialPageRoute(builder: (_) => const HomeScreen()));
       } else {
@@ -71,6 +82,21 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) _showMsg('Không kết nối được tới server', error: true);
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _goToRegister() async {
+    // Nhận email từ màn hình đăng ký trả về khi đăng ký thành công
+    final email = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+    );
+    if (email != null && mounted) {
+      setState(() {
+        _emailCtrl.text = email;
+        _passCtrl.clear();
+      });
+      _showMsg('Đăng ký thành công! Hãy đăng nhập.');
     }
   }
 
@@ -91,7 +117,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Vui lòng nhập email';
+                  if (v == null || v.trim().isEmpty) {
+                    return 'Vui lòng nhập email';
+                  }
                   if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(v.trim())) {
                     return 'Email không hợp lệ';
                   }
@@ -105,34 +133,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 icon: Icons.lock_outline,
                 obscure: _hidePass,
                 suffix: IconButton(
-                  icon: Icon(_hidePass ? Icons.visibility_off : Icons.visibility),
+                  icon: Icon(
+                    _hidePass ? Icons.visibility_off : Icons.visibility,
+                  ),
                   onPressed: () => setState(() => _hidePass = !_hidePass),
                 ),
                 validator: (v) =>
                 (v == null || v.isEmpty) ? 'Vui lòng nhập mật khẩu' : null,
               ),
               const SizedBox(height: 24),
-              AuthButton(text: 'Đăng nhập', loading: _loading, onPressed: _login),
+              AuthButton(
+                text: 'Đăng nhập',
+                loading: _loading,
+                onPressed: _login,
+              ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text('Chưa có tài khoản?'),
                   TextButton(
-                    onPressed: () async {
-                      // Nhận email từ màn hình đăng ký trả về khi đăng ký thành công
-                      final email = await Navigator.push<String>(
-                        context,
-                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                      );
-                      if (email != null && mounted) {
-                        setState(() {
-                          _emailCtrl.text = email;
-                          _passCtrl.clear();
-                        });
-                        _showMsg('Đăng ký thành công! Hãy đăng nhập.');
-                      }
-                    },
+                    onPressed: _goToRegister,
                     child: const Text(
                       'Đăng ký ngay',
                       style: TextStyle(

@@ -48,7 +48,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           // Nếu backend dùng tên field khác (vd: fullName) thì đổi key ở đây
-          'name': _nameCtrl.text.trim(),
+          'fullName': _nameCtrl.text.trim(),
           'email': _emailCtrl.text.trim(),
           'password': _passCtrl.text,
         }),

@@ -1,13 +1,31 @@
 # IDE
 .idea/
 *.iml
+*.iws
+*.ipr
+
+# Android / Gradle temp
+**/android/.gradle/
+**/android/.kotlin/
+**/android/local.properties
+**/android/app/local.properties
+
+# iOS / macOS temp & ephemeral
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/macos/Flutter/ephemeral/
+
+# Desktop symlinks
+**/linux/flutter/ephemeral/
+**/windows/flutter/ephemeral/
 
 # Flutter build & temp
-TaskManager_App/build/
-TaskManager_App/.dart_tool/
-TaskManager_App/.flutter-plugins
-TaskManager_App/.flutter-plugins-dependencies
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
 
 # Node.js
-api/node_modules/
-api/.env
+**/node_modules/
+**/.env

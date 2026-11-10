@@ -3,10 +3,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
+import '../models/task_activity.dart';
 
 class TaskService {
+  // 10.0.2.2 dùng cho Android Emulator kết nối tới localhost máy tính
   static const String baseUrl = 'http://10.0.2.2:3000/api/tasks';
 
+  // Helper lấy Header kèm JWT Token từ SharedPreferences
   static Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token') ?? '';
@@ -16,7 +19,7 @@ class TaskService {
     };
   }
 
-  // B1: Tạo công việc mới
+  // B1: Tạo công việc mới (POST /api/tasks)
   static Future<bool> createTask({
     required String title,
     required String description,
@@ -47,7 +50,7 @@ class TaskService {
     }
   }
 
-  // B2: Lấy danh sách công việc
+  // B2: Lấy danh sách công việc (GET /api/tasks)
   static Future<List<Task>> getTasks() async {
     final headers = await _getHeaders();
     final response = await http.get(
@@ -67,7 +70,7 @@ class TaskService {
     }
   }
 
-  // B2: Lấy chi tiết công việc theo ID
+  // B2: Lấy chi tiết công việc theo ID (GET /api/tasks/:id)
   static Future<Task> getTaskById(String id) async {
     final headers = await _getHeaders();
     final response = await http.get(
@@ -84,7 +87,7 @@ class TaskService {
     }
   }
 
-  // B2: Cập nhật công việc
+  // B2: Cập nhật công việc (PUT /api/tasks/:id)
   static Future<bool> updateTask(
       String id,
       Map<String, dynamic> updateData,
@@ -104,7 +107,7 @@ class TaskService {
     }
   }
 
-  // B3: Xóa công việc
+  // B3: Xóa công việc (DELETE /api/tasks/:id)
   static Future<bool> deleteTask(String id) async {
     final headers = await _getHeaders();
     final response = await http.delete(
@@ -117,6 +120,26 @@ class TaskService {
     } else {
       final error = jsonDecode(response.body);
       throw Exception(error['message'] ?? 'Không thể xóa công việc');
+    }
+  }
+
+  // B4 / E: Lấy lịch sử hoạt động của 1 công việc (GET /api/tasks/:id/activities)
+  static Future<List<TaskActivity>> getTaskActivities(String taskId) async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/$taskId/activities'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      final List data = body['data'];
+      return data
+          .map((json) => TaskActivity.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Không thể tải lịch sử hoạt động');
     }
   }
 }

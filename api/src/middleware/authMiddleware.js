@@ -1,21 +1,30 @@
 const jwt = require('jsonwebtoken');
 
-const authMiddleware = (req, res, next) => {
-    // Lấy token từ header
-    const token = req.header('Authorization');
+exports.protect = async (req, res, next) => {
+  let token;
 
-    if (!token) {
-        return res.status(401).json({ message: 'Không có token, từ chối truy cập!' });
-    }
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+  }
 
-    try {
-        // Xác thực token
-        const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (error) {
-        res.status(401).json({ message: 'Token không hợp lệ hoặc đã hết hạn!' });
-    }
+  if (!token) {
+    return res.status(401).json({
+      status: 'fail',
+      message: 'Bạn chưa đăng nhập! Vui lòng đăng nhập để truy cập.',
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+    req.user = { _id: decoded.id || decoded._id };
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      status: 'fail',
+      message: 'Token không hợp lệ hoặc đã hết hạn!',
+    });
+  }
 };
-
-module.exports = authMiddleware;

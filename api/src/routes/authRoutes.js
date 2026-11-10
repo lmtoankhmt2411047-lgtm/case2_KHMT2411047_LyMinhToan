@@ -1,10 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 
-router.post('/register', authController.register);
-router.post('/login', authController.login);
-router.get('/me', authMiddleware, authController.getMe);
+// Đăng ký
+if (typeof authController.register === 'function') {
+  router.post('/register', authController.register);
+}
+
+// Đăng nhập
+if (typeof authController.login === 'function') {
+  router.post('/login', authController.login);
+}
+
+// Lấy thông tin cá nhân
+if (typeof authController.getMe === 'function') {
+  router.get('/me', protect, authController.getMe);
+}
 
 module.exports = router;

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../models/task.dart';
 import '../../models/task_activity.dart';
 import '../../services/task_service.dart';
+import 'task_edit_screen.dart';
+import 'task_share_screen.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final String taskId;
@@ -29,7 +31,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     });
   }
 
-  // Xử lý Xóa công việc (B3)
   Future<void> _handleDeleteTask() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -56,7 +57,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Xóa công việc thành công')),
           );
-          Navigator.pop(context, true); // Trả về true để danh sách tự làm mới
+          Navigator.pop(context, true);
         }
       } catch (e) {
         if (mounted) {
@@ -68,12 +69,73 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
+  // Thu hồi quyền truy cập của người dùng (C3)
+  Future<void> _handleRemoveShare(String userId) async {
+    try {
+      final success = await TaskService.removeShareAccess(widget.taskId, userId);
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã thu hồi quyền truy cập')),
+        );
+        _loadData();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi thu hồi quyền: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chi Tiết Công Việc'),
         actions: [
+          FutureBuilder<Task>(
+            future: _taskFuture,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const SizedBox.shrink();
+              return IconButton(
+                icon: const Icon(Icons.share, color: Colors.green),
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TaskShareScreen(task: snapshot.data!),
+                    ),
+                  );
+                  if (result == true) {
+                    _loadData();
+                  }
+                },
+                tooltip: 'Giao việc & Chia sẻ',
+              );
+            },
+          ),
+          FutureBuilder<Task>(
+            future: _taskFuture,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const SizedBox.shrink();
+              return IconButton(
+                icon: const Icon(Icons.edit, color: Colors.blue),
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TaskEditScreen(task: snapshot.data!),
+                    ),
+                  );
+                  if (result == true) {
+                    _loadData();
+                  }
+                },
+                tooltip: 'Chỉnh sửa công việc',
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.delete, color: Colors.red),
             onPressed: _handleDeleteTask,
@@ -97,7 +159,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Thông tin chính công việc
                 Text(
                   task.title,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -119,9 +180,64 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ),
                   ],
                 ),
-                const Divider(height: 32),
+                const Divider(height: 24),
 
-                // Phần hiển thị Nhật ký hoạt động (B4 / E)
+                Text(
+                  'Người Đang Phụ Trách',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (task.assignees.isEmpty)
+                  const Text('Chưa giao cho ai', style: TextStyle(color: Colors.grey))
+                else
+                  Wrap(
+                    spacing: 8,
+                    children: task.assignees.map((assignee) {
+                      return Chip(
+                        avatar: Icon(
+                          assignee.isPrimary ? Icons.star : Icons.person,
+                          size: 18,
+                          color: assignee.isPrimary ? Colors.amber : Colors.blue,
+                        ),
+                        label: Text(
+                          '${assignee.fullName.isEmpty ? assignee.email : assignee.fullName}'
+                              '${assignee.isPrimary ? ' (Chính)' : ''}',
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                const Divider(height: 24),
+
+                Text(
+                  'Người Được Chia Sẻ',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (task.sharedWith.isEmpty)
+                  const Text('Chưa chia sẻ cho ai', style: TextStyle(color: Colors.grey))
+                else
+                  Wrap(
+                    spacing: 8,
+                    children: task.sharedWith.map((share) {
+                      return Chip(
+                        avatar: Icon(
+                          share.role == 'editor' ? Icons.edit : Icons.remove_red_eye,
+                          size: 18,
+                        ),
+                        label: Text(
+                          '${share.fullName.isEmpty ? share.email : share.fullName} (${share.role})',
+                        ),
+                        onDeleted: () => _handleRemoveShare(share.userId),
+                        deleteIcon: const Icon(Icons.cancel, size: 18, color: Colors.red),
+                      );
+                    }).toList(),
+                  ),
+                const Divider(height: 24),
+
                 Text(
                   'Lịch Sử Hoạt Động',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(

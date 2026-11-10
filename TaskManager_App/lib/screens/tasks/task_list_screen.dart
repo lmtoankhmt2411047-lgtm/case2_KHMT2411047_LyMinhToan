@@ -5,6 +5,8 @@ import '../../services/task_service.dart';
 import '../login_screen.dart';
 import 'task_create_screen.dart';
 import 'task_detail_screen.dart';
+import '../notifications/notification_screen.dart';
+import '../statistics/statistics_screen.dart'; // <--- 1. Import màn hình thống kê
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -122,6 +124,28 @@ class _TaskListScreenState extends State<TaskListScreen> {
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         actions: [
+          // <--- 2. THÊM NÚT THỐNG KÊ (BIỂU ĐỒ) --->
+          IconButton(
+            icon: const Icon(Icons.bar_chart, color: Colors.white),
+            tooltip: 'Thống kê',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const StatisticsScreen()),
+              );
+            },
+          ),
+          // <--- Nút quả chuông hiện có --->
+          IconButton(
+            icon: const Icon(Icons.notifications, color: Colors.white),
+            tooltip: 'Thông báo',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _fetchTasks,
@@ -170,8 +194,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          // Đã sửa withOpacity sang withValues theo chuẩn Flutter mới
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: DropdownButtonHideUnderline(
@@ -201,8 +224,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          // Đã sửa withOpacity sang withValues theo chuẩn Flutter mới
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: DropdownButtonHideUnderline(
@@ -296,8 +318,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                // Đã sửa withOpacity sang withValues theo chuẩn Flutter mới
-                                color: _getPriorityColor(task.priority).withValues(alpha: 0.15),
+                                color: _getPriorityColor(task.priority).withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(

@@ -87,7 +87,7 @@ class TaskService {
     }
   }
 
-  // B2: Cập nhật công việc (PUT /api/tasks/:id)
+  // B3: Cập nhật công việc (PUT /api/tasks/:id)
   static Future<bool> updateTask(
       String id,
       Map<String, dynamic> updateData,
@@ -140,6 +140,70 @@ class TaskService {
     } else {
       final error = jsonDecode(response.body);
       throw Exception(error['message'] ?? 'Không thể tải lịch sử hoạt động');
+    }
+  }
+
+  // C1: Giao công việc cho thành viên qua Email (POST /api/tasks/:id/assign)
+  static Future<bool> assignTask({
+    required String taskId,
+    required String email,
+    bool isPrimary = false,
+  }) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/$taskId/assign'),
+      headers: headers,
+      body: jsonEncode({
+        'email': email,
+        'isPrimary': isPrimary,
+      }),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return true;
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Không thể giao công việc');
+    }
+  }
+
+  // C2: Chia sẻ công việc và cấp quyền viewer/editor (POST /api/tasks/:id/share)
+  static Future<bool> shareTask({
+    required String taskId,
+    required String email,
+    required String role,
+  }) async {
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/$taskId/share'),
+      headers: headers,
+      body: jsonEncode({
+        'email': email,
+        'role': role,
+      }),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return true;
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Không thể chia sẻ công việc');
+    }
+  }
+
+  // C3: Thu hồi quyền chia sẻ (DELETE /api/tasks/:id/share/:userId)
+  static Future<bool> removeShareAccess(String taskId, String userId) async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/$taskId/share/$userId'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Không thể thu hồi quyền truy cập');
     }
   }
 }

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_widgets.dart';
 import 'register_screen.dart';
+import 'tasks/task_list_screen.dart'; // Import màn hình danh sách công việc
 
 const String kBaseUrl = 'http://10.0.2.2:3000/api/auth';
 
@@ -63,18 +64,20 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (res.statusCode == 200) {
-        // Lưu JWT token và thông tin người dùng
+        // Lưu JWT token (khóa jwt_token để đồng bộ với TaskService) và thông tin người dùng
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', data['token']);
+        await prefs.setString('jwt_token', data['token']);
         await prefs.setString('fullName', data['user']['fullName']);
         await prefs.setString('email', data['user']['email']);
 
         if (!mounted) return;
         _showMsg('Xin chào ${data['user']['fullName']}!');
 
-        // TODO: chuyển sang màn hình chính khi đã có, ví dụ:
-        // Navigator.pushReplacement(context,
-        //     MaterialPageRoute(builder: (_) => const HomeScreen()));
+        // CHUYỂN SANG MÀN HÌNH DANH SÁCH CÔNG VIỆC
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const TaskListScreen()),
+        );
       } else {
         _showMsg(data['message'] ?? 'Đăng nhập thất bại', error: true);
       }

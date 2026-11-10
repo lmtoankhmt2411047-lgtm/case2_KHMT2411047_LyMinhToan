@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/task.dart';
 import '../../services/task_service.dart';
 import 'task_create_screen.dart';
+import 'task_detail_screen.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -64,6 +65,17 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     task.status == 'completed' ? Icons.check_circle : Icons.pending_actions,
                     color: task.status == 'completed' ? Colors.green : Colors.orange,
                   ),
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TaskDetailScreen(taskId: task.id),
+                      ),
+                    );
+                    if (result == true) {
+                      _refreshTasks();
+                    }
+                  },
                 ),
               );
             },

@@ -1,11 +1,22 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/task.dart';
 
 class TaskService {
-  // Thay đổi IP nếu chạy máy thật (VD: http://192.168.1.x:3000/api/tasks)
   static const String baseUrl = 'http://10.0.2.2:3000/api/tasks';
 
+  static Future<Map<String, String>> _getHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token') ?? '';
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+  }
+
+  // B1: Tạo công việc mới
   static Future<bool> createTask({
     required String title,
     required String description,
@@ -14,15 +25,10 @@ class TaskService {
     required String priority,
     required String status,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token'); // Lấy token xác thực đã lưu lúc đăng nhập
-
+    final headers = await _getHeaders();
     final response = await http.post(
       Uri.parse(baseUrl),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: headers,
       body: jsonEncode({
         'title': title,
         'description': description,
@@ -38,6 +44,79 @@ class TaskService {
     } else {
       final error = jsonDecode(response.body);
       throw Exception(error['message'] ?? 'Không thể tạo công việc');
+    }
+  }
+
+  // B2: Lấy danh sách công việc
+  static Future<List<Task>> getTasks() async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse(baseUrl),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      final List data = body['data'];
+      return data
+          .map((json) => Task.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Không thể tải danh sách công việc');
+    }
+  }
+
+  // B2: Lấy chi tiết công việc theo ID
+  static Future<Task> getTaskById(String id) async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/$id'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      return Task.fromJson(body['data'] as Map<String, dynamic>);
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Không thể tải chi tiết công việc');
+    }
+  }
+
+  // B2: Cập nhật công việc
+  static Future<bool> updateTask(
+      String id,
+      Map<String, dynamic> updateData,
+      ) async {
+    final headers = await _getHeaders();
+    final response = await http.put(
+      Uri.parse('$baseUrl/$id'),
+      headers: headers,
+      body: jsonEncode(updateData),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Không thể cập nhật công việc');
+    }
+  }
+
+  // B3: Xóa công việc
+  static Future<bool> deleteTask(String id) async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/$id'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Không thể xóa công việc');
     }
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart';
+import 'screens/tasks/task_list_screen.dart'; // Import màn hình danh sách công việc
 
 void main() {
   runApp(const MyApp());
@@ -11,12 +11,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Task Manager',
+      title: 'Quản Lý Công Việc',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        useMaterial3: true,
       ),
-      home: LoginScreen(),
+      home: const TaskListScreen(), // Đặt màn hình danh sách làm màn hình chính
     );
   }
 }
